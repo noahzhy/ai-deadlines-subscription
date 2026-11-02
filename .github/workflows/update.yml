@@ -1,0 +1,29 @@
+name: Update calendar
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency:
+  group: calendar-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python build.py
+      - name: Publish feed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f public
+          git commit -m 'Update filtered calendar' || exit 0
+          git subtree split --prefix public -b pages
+          git push origin pages:gh-pages --force
